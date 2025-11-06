@@ -6,67 +6,59 @@ import org.aspectj.lang.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.example.simulacionpedidos.service.SimulationState;
 
-@Aspect // (1) Marca la clase como un Aspecto AOP
-@Component // Componente de Spring para que sea detectado e inyectado
+@Aspect
+@Component
 public class OrderAuditPerformanceAspect {
 
     private static final Logger log = LoggerFactory.getLogger(OrderAuditPerformanceAspect.class);
+    private final SimulationState state; // Inyección de dependencia
 
-    /**
-     * (2) Pointcut: Define dónde se aplicarán los Advice.
-     * Intercepta cualquier método marcado con @Auditable que acepte un objeto Order.
-     */
-    @Pointcut("@annotation(org.example.simulacionpedidos.annotations.Auditable) && args(order)")
-    public void auditableOrderOperation(order order) {
-        // Este método está vacío; solo define el punto de corte.
+    public OrderAuditPerformanceAspect(SimulationState state) {
+        this.state = state; // Se inyecta el almacenamiento central
     }
 
-    /**
-     * (3) Advice @Around: Control de Rendimiento y Registro de Inicio.
-     * Este Advice envuelve la ejecución del método de negocio.
-     */
+    @Pointcut("@annotation(org.example.simulacionpedidos.annotations.Auditable) && args(order)")
+    public void auditableOrderOperation(order order) {}
+
     @Around("auditableOrderOperation(order)")
     public Object measureExecutionTime(ProceedingJoinPoint joinPoint, order order) throws Throwable {
         long startTime = System.currentTimeMillis();
 
-        // --- Auditoría de INICIO ---
-        log.info("--- Auditoría: Inicio de proceso para {} ---", order.toString());
+        // --- Auditoría de INICIO: Se registra en el estado ---
+        String startMsg = "--- Auditoría: Inicio de proceso para " + order.toString() + " ---";
+        state.addLog(startMsg); // Almacena el log
+        log.info(startMsg); // Mantener el log de consola también para debug
 
         Object result = null;
         try {
-            // Ejecuta el método original (la lógica de negocio)
             result = joinPoint.proceed();
         } finally {
-            // Este bloque garantiza la medición del tiempo, incluso si ocurre una excepción
-            long endTime = System.currentTimeMillis();
-            long duration = endTime - startTime;
+            long duration = System.currentTimeMillis() - startTime;
 
-            // --- Control de RENDIMIENTO ---
-            log.info("[PERFORMANCE] {} procesado en {} ms", order.toString(), duration);
+            // --- Control de RENDIMIENTO: Se registra en el estado ---
+            String perfMsg = "[PERFORMANCE] " + order.toString() + " procesado en " + duration + " ms";
+            state.addLog(perfMsg); // Almacena el log
+            log.info(perfMsg); // Mantener el log de consola
         }
         return result;
     }
 
-    /**
-     * (4) Advice @AfterReturning: Registro de Finalización Exitosa.
-     * Se ejecuta SOLO si el método de negocio termina sin lanzar una excepción.
-     */
     @AfterReturning("auditableOrderOperation(order)")
     public void logSuccessfulCompletion(order order) {
-        // --- Auditoría de FIN (Éxito) ---
-        log.info("--- Auditoría: Fin de proceso para {} ---", order.toString());
+        // --- Auditoría de FIN (Éxito): Se registra en el estado ---
+        String endMsg = "--- Auditoría: Fin de proceso para " + order.toString() + " ---";
+        state.addLog(endMsg); // Almacena el log
+        log.info(endMsg);
     }
 
 
-    /**
-     * (5) Advice @AfterThrowing: Manejo y Registro de Excepciones.
-     * Se ejecuta si el método de negocio lanza CUALQUIER excepción.
-     */
     @AfterThrowing(pointcut = "auditableOrderOperation(order)", throwing = "ex")
     public void handleException(order order, Throwable ex) {
-        // --- Manejo de EXCEPCIONES ---
-        log.error("[ERROR] {} falló: {} ({})", order.toString(), ex.getMessage(), "Error simulado");
-        // Nota: La Auditoría de FIN NO se registra aquí, ya que el proceso falló.
+        // --- Manejo de EXCEPCIONES: Se registra en el estado ---
+        String errorMsg = "[ERROR] " + order.toString() + " falló: " + ex.getMessage();
+        state.addLog(errorMsg); // Almacena el log
+        log.error(errorMsg);
     }
 }

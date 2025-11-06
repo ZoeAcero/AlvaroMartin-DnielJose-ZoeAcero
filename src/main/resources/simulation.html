@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Simulación AOP de Pedidos</title>
+    <style>
+        body { font-family: 'Consolas', monospace; background-color: #282c34; color: #abb2bf; margin: 20px; }
+        .container { max-width: 800px; margin: auto; background-color: #3e4451; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); }
+        h1 { color: #61afef; text-align: center; }
+        h3 { color: #c678dd; }
+        pre { background-color: #21252b; padding: 15px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
+        .log-entry { margin-bottom: 5px; line-height: 1.2; }
+        .info { color: #50fa7b; }
+        .audit { color: #f1c40f; }
+        .performance { color: #98c379; }
+        .error { color: #e06c75; font-weight: bold; }
+        .button-link { display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-bottom: 20px; font-weight: bold; }
+        .summary { margin-top: 20px; border-top: 2px solid #565c64; padding-top: 10px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Simulación de Pedidos Concurrente (AOP + Web)</h1>
+
+    <a th:href="@{/simular}" class="button-link">Lanzar Simulación de 10 Pedidos</a>
+
+    <div th:if="${hasRun}">
+        <h3>Resultados de la Simulación</h3>
+
+        <pre>
+                <div th:each="logEntry : ${logs}" class="log-entry">
+                    <span th:if="${logEntry.startsWith('--- Auditoría:')}" class="audit" th:text="${logEntry}"></span>
+                    <span th:if="${logEntry.startsWith('[PERFORMANCE]')}" class="performance" th:text="${logEntry}"></span>
+                    <span th:if="${logEntry.startsWith('[ERROR]')}" class="error" th:text="${logEntry}"></span>
+                    <span th:if="${logEntry.startsWith('[INFO] Pedido') or logEntry.startsWith('[INFO] Iniciando') or logEntry.startsWith('[INFO] Lógica de negocio')}" class="info" th:text="${logEntry}"></span>
+                </div>
+            </pre>
+
+        <div class="summary">
+            <p>=== PROCESAMIENTO FINALIZADO ===</p>
+            <p>Tiempo total de simulación: <strong th:text="${totalTime}">3000</strong> ms aprox.</p>
+        </div>
+    </div>
+
+    <div th:unless="${hasRun}">
+        <p>Haz clic en el botón para iniciar la simulación concurrente.</p>
+    </div>
+
+</div>
+</body>
+</html>

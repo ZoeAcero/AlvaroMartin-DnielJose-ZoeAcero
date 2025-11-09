@@ -39,4 +39,9 @@ public class SimulationState {
     public void setTotalSimulationTime(long totalSimulationTime) {
         this.totalSimulationTime = totalSimulationTime;
     }
+
+    public void clear() {
+        logs.clear();
+    }
+
 }
